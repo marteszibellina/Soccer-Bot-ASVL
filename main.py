@@ -1,132 +1,206 @@
 import telebot
 from telebot import types
 from datetime import datetime
-from names import players, players_approved, players_denied, players_pending, players_payed
-from schedule import game_schedule
+from names import (
+    players,
+    players_approved,
+    players_denied,
+    players_pending,
+    players_payed,
+    ADMINS,
+)
+from Menu import (
+    MAIN_MENU_MESSAGE,
+    MAIN_BUTTONS,
+    INFO,
+    MENUS,
+    CHECK,
+    CONFIRM_BUTTONS,
+    CONFIRM_MESSAGE,
+    ADMIN_MENU_MESSAGE,
+    ADMIN_BUTTONS,
+    BACK,
+    ERROR,
+    MENU_LIST,
+)
 
-token = "6877818588:AAHNKsoxApn51aelncytFGCMOwVkoHYhKJA"
+token = "6877818588:AAHK_9cdOuYSLmuINO-TD2pOGVH0wweyDmo"
 bot = telebot.TeleBot(token)
 
-weekday = ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"]
+game_schedule = "Среда, 19:00 - 22:00"
+weekday = [
+    "Понедельник",
+    "Вторник",
+    "Среда",
+    "Четверг",
+    "Пятница",
+    "Суббота",
+    "Воскресенье",
+]
 current_date = datetime.now().strftime("%d.%m.%Y")
 current_weekday = weekday[datetime.now().weekday()]
 
+# Главное меню. При запуске бота будет высвечиваться приветственное сообщение
 
-@bot.message_handler(commands=['start'])
-def start_message(message):
-    bot.send_message(message.chat.id, f"Привет, {message.chat.first_name}! Я твой персональный помощник!")
-    if message.chat.first_name not in players.keys() and message.chat.id not in players.items():
-        players[message.chat.first_name] = message.chat.id
+
+@bot.message_handler(commands=["start"])
+def admin_menu(mes):
+    bot.send_message(
+        mes.chat.id,
+        f"Привет, {mes.chat.first_name}! Я твой персональный помощник!",
+    )
+    if mes.chat.id not in players.keys():
+        players[mes.chat.id] = mes.chat.first_name
+    if mes.chat.id in ADMINS.keys():
+        bot.send_message(
+            mes.chat.id,
+            f"{mes.chat.first_name}, {ADMIN_MENU_MESSAGE[2]}",
+        )
         keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
-        btn1 = types.KeyboardButton("Когда игра?")
-        btn2 = types.KeyboardButton("Записаться")
-        btn3 = types.KeyboardButton("Я записан?")
-        btn4 = types.KeyboardButton("Контакты")
+        btn1 = types.KeyboardButton(MAIN_BUTTONS[0])
+        btn2 = types.KeyboardButton(MAIN_BUTTONS[1])
+        btn3 = types.KeyboardButton(MAIN_BUTTONS[2])
+        btn4 = types.KeyboardButton(MAIN_BUTTONS[3])
+        btn5 = types.KeyboardButton(ADMIN_BUTTONS[0])
+        btn6 = types.KeyboardButton(ADMIN_BUTTONS[1])
+        btn7 = types.KeyboardButton(ADMIN_BUTTONS[2])
+        btn8 = types.KeyboardButton(ADMIN_BUTTONS[3])
+        btn9 = types.KeyboardButton(ADMIN_BUTTONS[4])
+        keyboard.add(btn1, btn2, btn3, btn4, btn5, btn6, btn7, btn8, btn9)
+        bot.send_message(mes.chat.id, f"{ADMIN_MENU_MESSAGE[0]}")
+        bot.send_message(
+            mes.chat.id,
+            f"{ADMIN_MENU_MESSAGE[1]}",
+            reply_markup=keyboard,
+        )
+    else:
+        keyboard = types.ReplyKeyboardMarkup(row_width=4, resize_keyboard=True)
+        btn1 = types.KeyboardButton(MAIN_BUTTONS[0])
+        btn2 = types.KeyboardButton(MAIN_BUTTONS[1])
+        btn3 = types.KeyboardButton(MAIN_BUTTONS[2])
+        btn4 = types.KeyboardButton(MAIN_BUTTONS[3])
         keyboard.add(btn1, btn2, btn3, btn4)
-        bot.send_message(message.chat.id, "Главное меню. \nВыбери интересующую тебя опцию", reply_markup=keyboard)
+        bot.send_message(mes.chat.id, f"{MAIN_MENU_MESSAGE[0]}")
+        bot.send_message(
+            mes.chat.id,
+            f"{MAIN_MENU_MESSAGE[1]}",
+            reply_markup=keyboard,
+        )
 
 
-@bot.message_handler(content_types=['text'])
-def text(message):
-    if message.text == "Когда игра?":
-        bot.send_message(message.chat.id, f"Игра: \n{game_schedule}")
-        bot.send_message(message.chat.id, f"А сегодня: \n{current_weekday}, {current_date}")
-    elif message.text == "Записаться":
-        for player in players:
-            keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
-            btn5 = types.KeyboardButton("Да, записывай")
-            btn6 = types.KeyboardButton("Не уверен")
-            btn7 = types.KeyboardButton("Нет, отказываюсь")
-            btn8 = types.KeyboardButton("Назад")
-            keyboard.add(btn5, btn6, btn7, btn8)
-            bot.send_message(message.chat.id, f"Ты уверен, {player}?", reply_markup=keyboard)
-    elif message.text == "Я записан?":
-        for player in players:
-            if player in players_pending:
-                bot.send_message(message.chat.id, f"{player}, ты в сомнениях.")
-            elif player in players_approved:
-                bot.send_message(message.chat.id, f"{player}, ты в игре.")
-            elif player in players_denied:
-                bot.send_message(message.chat.id, f"{player}, ты вне игры.")
+# Функция главного меню. Основное. Из этого меню можно попасть в следующие
+
+
+@bot.message_handler(content_types=["text"])
+for number in MENU_LIST:
+    if number == 8:
+        def return_back(mes):
+            main_menu(mes)
+
+    if number == 8:
+        def check_in_confirm(mes):
+            for mes.chat.id in players.keys():
+                if mes.chat.id in players_approved:
+                    bot.send_message(mes.chat.id, f"{mes.chat.first_name}{CHECK[0]}")
+                elif mes.chat.id in players_pending:
+                    bot.send_message(mes.chat.id, f"{mes.chat.first_name}{CHECK[1]}")
+                elif mes.chat.id in players_denied:
+                    bot.send_message(mes.chat.id, f"{mes.chat.first_name}{CHECK[2]}")
+                else:
+                    bot.send_message(mes.chat.id, f"{CHECK[3]}")
+
+    if number == 7:
+        def clear_lists(mes):
+            if mes.chat.id in players_approved:
+                players_pending.remove(mes.chat.id)
+                players_denied.remove(mes.chat.id)
+            elif mes.chat.id in players_pending:
+                players_approved.remove(mes.chat.id)
+                players_denied.remove(mes.chat.id)
+            elif mes.chat.id in players_denied:
+                players_approved.remove(mes.chat.id)
+                players_pending.remove(mes.chat.id)
             else:
-                bot.send_message(message.chat.id, f"{player}, информация не найдена.")
-    elif message.text == "Контакты":
-        bot.send_message(message.chat.id, "Контакты:\n"
-                                          "@ArtStudioVitaliyaLeshchenko")
-    if message.text == "Да, записывай":
-        for player in players:
-            if player not in players_approved:
-                players_approved.append(player)
-                bot.send_message(message.chat.id, f"{player}, ты в игре.")
-                if player in players_approved and player not in players_pending and player not in players_denied:
-                    continue
-                elif player in players_approved and player in players_pending and player not in players_denied:
-                    players_pending.remove(player)
-                elif player in players_approved and player not in players_pending and player in players_denied:
-                    players_denied.remove(player)
-        def back(message, bot):
+                bot.send_message(mes.chat.id, "Fffuuuck!")
+
+    if number == 6:
+        def check_in_main(mes):
+            bot.send_message(mes.chat.id, f"{MENUS[1]}")
             keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
-            btn1 = types.KeyboardButton("Когда игра?")
-            btn2 = types.KeyboardButton("Записаться")
-            btn3 = types.KeyboardButton("Я записан?")
-            btn4 = types.KeyboardButton("Контакты")
-            keyboard.add(btn1, btn2, btn3, btn4)
-            bot.send_message(message.chat.id, "Главное меню. \nВыбери интересующую тебя опцию", reply_markup=keyboard)
-        back(message, bot)
-    elif message.text == "Не уверен":
-        for player in players:
-            if player not in players_pending:
-                players_pending.append(player)
-                bot.send_message(message.chat.id, f"{player}, ты в сомнениях.")
-                if player in players_pending and player not in players_approved and player not in players_denied:
-                    continue
-                elif player in players_pending and player in players_approved and player not in players_denied:
-                    players_approved.remove(player)
-                elif player in players_pending and player not in players_approved and player in players_denied:
-                    players_denied.remove(player)
-        def back(message, bot):
-            keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
-            btn1 = types.KeyboardButton("Когда игра?")
-            btn2 = types.KeyboardButton("Записаться")
-            btn3 = types.KeyboardButton("Я записан?")
-            btn4 = types.KeyboardButton("Контакты")
-            keyboard.add(btn1, btn2, btn3, btn4)
-            bot.send_message(message.chat.id, "Главное меню. \nВыбери интересующую тебя опцию", reply_markup=keyboard)
-        back(message, bot)
-    elif message.text == "Нет, отказываюсь":
-        for player in players:
-            if player not in players_denied:
-                players_denied.append(player)
-                bot.send_message(message.chat.id, f"{player}, ты вне игры.")
-                if player in players_denied and player not in players_approved and player not in players_pending:
-                    continue
-                elif player in players_denied and player in players_approved and player not in players_pending:
-                    players_approved.remove(player)
-                elif player in players_denied and player not in players_approved and player in players_pending:
-                    players_pending.remove(player)
-        def back(message, bot):
-            keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
-            btn1 = types.KeyboardButton("Когда игра?")
-            btn2 = types.KeyboardButton("Записаться")
-            btn3 = types.KeyboardButton("Я записан?")
-            btn4 = types.KeyboardButton("Контакты")
-            keyboard.add(btn1, btn2, btn3, btn4)
-            bot.send_message(message.chat.id, "Главное меню. \nВыбери интересующую тебя опцию", reply_markup=keyboard)
-        back(message, bot)
-    elif message.text == "Назад":
-        def back(message, bot):
-            keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
-            btn1 = types.KeyboardButton("Когда игра?")
-            btn2 = types.KeyboardButton("Записаться")
-            btn3 = types.KeyboardButton("Я записан?")
-            btn4 = types.KeyboardButton("Контакты")
-            keyboard.add(btn1, btn2, btn3, btn4)
-            bot.send_message(message.chat.id, "Главное меню. \nВыбери интересующую тебя опцию", reply_markup=keyboard)
-        back(message, bot)
+            btn10 = types.KeyboardButton(CONFIRM_BUTTONS[0])
+            btn11 = types.KeyboardButton(CONFIRM_BUTTONS[1])
+            btn12 = types.KeyboardButton(CONFIRM_BUTTONS[2])
+            btn13 = types.KeyboardButton(BACK)
+            keyboard.add(btn10, btn11, btn12, btn13)
+            bot.send_message(
+                mes.chat.id,
+                f"{CONFIRM_MESSAGE[0]}{mes.chat.first_name}?",
+                reply_markup=keyboard,
+            )
+
+    if number == 5:
+        def confirm(mes):
+            for mes.chat.id in players.keys():
+                if mes.chat.id not in players_approved and mes.chat.id in players.keys():
+                    players_approved[mes.chat.id] = mes.chat.first_name
+                clear_lists(mes)
+                bot.send_message(mes.chat.id, f"{mes.chat.first_name}{CHECK[0]}")
+            else:
+                bot.send_message(mes.chat.id, f"{ERROR[2]}")
+            return_back(mes)
+
+def pending(mes):
+    if mes.text == CONFIRM_BUTTONS[1]:
+        for mes.chat.id in players.keys():
+    if mes.chat.id not in players_pending:
+        players_pending[mes.chat.id] = mes.chat.first_name
+        clear_lists(mes)
+        bot.send_message(mes.chat.id, f"{mes.chat.first_name}{CHECK[1]}")
+    return_back(mes)
+
+
+def deny(mes):
+    if mes.text == CONFIRM_BUTTONS[2]:
+        for mes.chat.id in players.keys():
+            if mes.chat.id not in players_denied:
+                players_denied[mes.chat.id] = mes.chat.first_name
+                clear_lists(mes)
+                bot.send_message(mes.chat.id, f"{mes.chat.first_name}{CHECK[2]}")
+    return_back(mes)
+
+
+def confirmation(mes):
+    if mes.text == CONFIRM_BUTTONS[0]:
+        confirm(mes)
+    elif mes.text == CONFIRM_BUTTONS[1]:
+        pending(mes)
+    elif mes.text == CONFIRM_BUTTONS[2]:
+        deny(mes)
+    elif mes.text == BACK:
+        return_back(mes)
+    else:
+        bot.send_message(mes.chat.id, f"{ERROR[1]}")
+
+
+def main_menu(mes):
+    bot.send_message(mes.chat.id, f"{MENUS[0]}")
+    if mes.text == MAIN_BUTTONS[0]:
+        bot.send_message(mes.chat.id, f"{INFO[0]}: \n{game_schedule}")
+        bot.send_message(mes.chat.id, f"{INFO[1]}: \n{current_date}")
+    elif mes.text == MAIN_BUTTONS[1]:
+        check_in_main(mes)
+    elif mes.text == MAIN_BUTTONS[2]:
+        check_in_confirm(mes)
+    elif mes.text == MAIN_BUTTONS[3]:
+        bot.send_message(mes.chat.id, f"{INFO[2]}")
+    else:
+        bot.send_message(mes.chat.id, f"{ERROR[0]}")
 
 
 bot.polling(none_stop=True, interval=0)
 
+
+print("Administrators:", ADMINS)
 print("Total players:", players)
 print("Approved Players:", players_approved)
 print("Pending Players", players_pending)
