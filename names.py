@@ -1,19 +1,14 @@
 import datetime
 
-admins = {'Dmitry': 3568804, 'Виталий': 1201661895}
-players = {}
-players_approved = []
-players_denied = []
-players_pending = []
-players_payed = []
+"""
+Памятка для тупого:
+Словарь_Значений = {"КЛЮЧ": "ЗНАЧЕНИЕ"}
 
-def clear_players():
-    if datetime.now().strftime("%d.%m.%Y") == datetime.date.isoweekday("Четверг"):
-        players_approved = []
-        players_denied = []
-        players_pending = []
-        players_payed = []
-    else:
-        pass
-    return players_approved, players_denied, players_pending, players_payed
+"""
 
+ADMINS = {3568804: "Dmitry", 1201661895: "Виталий"}
+players = {}  # type: ignore
+players_approved = {}  # type: ignore
+players_denied = {}  # type: ignore
+players_pending = {}  # type: ignore
+players_payed = {}  # type: ignore
