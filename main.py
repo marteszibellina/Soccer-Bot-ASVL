@@ -1,43 +1,21 @@
-
 import telebot  # type: ignore
 from telebot import types
+from names import *  # type: ignore
+from Menu import *  # type: ignore
+from settings import *  # type: ignore
 from datetime import datetime
-from names import (  # type: ignore
-    players,
-    players_approved,
-    players_denied,
-    players_pending,
-    players_payed,
-    ADMINS,
-)
-from Menu import (  # type: ignore
-    MAIN_MENU_MESSAGE,
-    MAIN_BUTTONS,
-    INFO,
-    ERROR,
-    CHECK,
-    CONFIRM_BUTTONS,
-    CONFIRM_MESSAGE,
-    ADMIN_MENU_MESSAGE,
-    ADMIN_BUTTONS,
-    BACK,
+import logging
+
+logging.basicConfig(
+    level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
-token = "6877818588:AAHK_9cdOuYSLmuINO-TD2pOGVH0wweyDmo"
-bot = telebot.TeleBot(token)
+logger = logging.getLogger("log_1")
 
-game_schedule = "Среда, 19:00 - 22:00"
-weekday = [
-    "Понедельник",
-    "Вторник",
-    "Среда",
-    "Четверг",
-    "Пятница",
-    "Суббота",
-    "Воскресенье",
-]
-current_date = datetime.now().strftime("%d.%m.%Y")
-current_weekday = weekday[datetime.now().weekday()]
+bot = telebot.TeleBot(token)  # type: ignore
+
+current_date = datetime.now().strftime("%d.%m.%Y")  # type: ignore
+current_weekday = weekday[datetime.now().weekday()]  # type: ignore
 
 # Главное меню. При запуске бота будет высвечиваться приветственное сообщение
 
@@ -48,6 +26,7 @@ def admin_menu(mes):
         mes.chat.id,
         f"Привет, {mes.chat.first_name}! Я твой персональный помощник!",
     )
+    bot.send_message(mes.chat.id, f"{DISCLAIMER[0]}")
     if mes.chat.id not in players.keys():
         players[mes.chat.id] = mes.chat.first_name
     if mes.chat.id in ADMINS.keys():
@@ -73,6 +52,7 @@ def admin_menu(mes):
             reply_markup=keyboard,
         )
     else:
+        bot.send_message(mes.chat.id, f"{DISCLAIMER}")
         keyboard = types.ReplyKeyboardMarkup(row_width=4, resize_keyboard=True)
         btn1 = types.KeyboardButton(
             MAIN_BUTTONS[0],
@@ -110,10 +90,28 @@ def text(mes):
         )
 
     elif mes.text == MAIN_BUTTONS[2]:
-        checking(mes)
+        if mes.chat.id in players_approved.keys():
+            bot.send_message(mes.chat.id, f"{mes.chat.first_name}{CHECK[0]}")
+        elif mes.chat.id in players_pending.keys():
+            bot.send_message(mes.chat.id, f"{mes.chat.first_name}{CHECK[1]}")
+        elif mes.chat.id in players_denied.keys():
+            bot.send_message(mes.chat.id, f"{mes.chat.first_name}{CHECK[2]}")
+        else:
+            bot.send_message(mes.chat.id, f"{CHECK[3]}, {mes.chat.first_name}")
 
     elif mes.text == MAIN_BUTTONS[3]:
         bot.send_message(mes.chat.id, f"{INFO[2]}")
+
+    elif mes.text == ADMIN_BUTTONS[0]:
+        bot.send_message(mes.chat.id, f"{ADMIN_BUTTONS[0]}: \n{players}")
+    elif mes.text == ADMIN_BUTTONS[1]:
+        bot.send_message(mes.chat.id, f"{ADMIN_BUTTONS[1]}: \n{players_approved}")
+    elif mes.text == ADMIN_BUTTONS[2]:
+        bot.send_message(mes.chat.id, f"{ADMIN_BUTTONS[2]}: \n{players_pending}")
+    elif mes.text == ADMIN_BUTTONS[3]:
+        bot.send_message(mes.chat.id, f"{ADMIN_BUTTONS[3]}: \n{players_denied}")
+    elif mes.text == ADMIN_BUTTONS[4]:
+        bot.send_message(mes.chat.id, f"{ADMIN_BUTTONS[4]}: \n{players_payed} rub")
 
     if mes.text == CONFIRM_BUTTONS[0]:
         confirm(mes)
@@ -123,21 +121,6 @@ def text(mes):
         deny(mes)
     elif mes.text == BACK:
         admin_menu(mes)
-    if mes.chat.id in ADMINS.keys():
-        admin_button(mes)
-
-
-@bot.message_handler(func=lambda btn: True)
-def checking(mes):
-    for mes.chat.id in players.keys():
-        if mes.chat.id in players_approved.keys():
-            bot.send_message(mes.chat.id, f"{mes.chat.first_name}{CHECK[0]}")
-        elif mes.chat.id in players_pending.keys():
-            bot.send_message(mes.chat.id, f"{mes.chat.first_name}{CHECK[1]}")
-        elif mes.chat.id in players_denied.keys():
-            bot.send_message(mes.chat.id, f"{mes.chat.first_name}{CHECK[2]}")
-        else:
-            bot.send_message(mes.chat.id, f"{CHECK[3]}, {mes.chat.first_name}")
 
 
 @bot.message_handler(func=lambda btn: True)
@@ -151,6 +134,7 @@ def confirm(mes):
                 and mes.chat.id not in players_denied.keys()
             ):
                 bot.send_message(mes.chat.id, f"{mes.chat.first_name}{CHECK[0]}")
+                players_payed[0] += price
             elif (
                 mes.chat.id in players_approved.keys()
                 and mes.chat.id in players_pending.keys()
@@ -158,6 +142,7 @@ def confirm(mes):
             ):
                 players_pending.pop(mes.chat.id)
                 bot.send_message(mes.chat.id, f"{mes.chat.first_name}{CHECK[0]}")
+                players_payed[0] += price
             elif (
                 mes.chat.id in players_approved.keys()
                 and mes.chat.id not in players_pending.keys()
@@ -165,6 +150,7 @@ def confirm(mes):
             ):
                 players_denied.pop(mes.chat.id)
                 bot.send_message(mes.chat.id, f"{mes.chat.first_name}{CHECK[0]}")
+                players_payed[0] += price
 
 
 @bot.message_handler(func=lambda btn: True)
@@ -207,6 +193,7 @@ def deny(mes):
             and mes.chat.id not in players_pending.keys()
         ):
             bot.send_message(mes.chat.id, f"{mes.chat.first_name}{CHECK[2]}")
+            players_payed[0] -= price
         elif (
             mes.chat.id in players_denied.keys()
             and mes.chat.id in players_approved.keys()
@@ -214,6 +201,7 @@ def deny(mes):
         ):
             players_approved.pop(mes.chat.id)
             bot.send_message(mes.chat.id, f"{mes.chat.first_name}{CHECK[2]}")
+            players_payed[0] -= price
         elif (
             mes.chat.id in players_denied.keys()
             and mes.chat.id not in players_approved.keys()
@@ -221,39 +209,22 @@ def deny(mes):
         ):
             players_pending.pop(mes.chat.id)
             bot.send_message(mes.chat.id, f"{mes.chat.first_name}{CHECK[2]}")
+            players_payed[0] -= price
         else:
             bot.send_message(mes.chat.id, f"{mes.chat.first_name}{CHECK[2]}")
-
-
-@bot.message_handler(func=lambda btn: True)
-def admin_button(mes):
-    if mes.text == ADMIN_BUTTONS[0]:
-        for player_id, player_name in players.items():
-            bot.send_message(mes.chat.id, f"{ADMIN_BUTTONS[0]}:\n{player_name}")
-
-    elif mes.text == ADMIN_BUTTONS[1]:
-        for player_id, player_name in players_approved.items():
-            bot.send_message(mes.chat.id, f"{ADMIN_BUTTONS[1]}:\n{player_name}")
-
-    elif mes.text == ADMIN_BUTTONS[2]:
-        for player_id, player_name in players_pending.items():
-            bot.send_message(mes.chat.id, f"{ADMIN_BUTTONS[2]}:\n{player_name}")
-
-    elif mes.text == ADMIN_BUTTONS[3]:
-        for player_id, player_name in players_denied.items():
-            bot.send_message(mes.chat.id, f"{ADMIN_BUTTONS[3]}:\n{player_name}")
-
-    elif mes.text == ADMIN_BUTTONS[4]:
-        for player_id, player_name in players_payed.items():
-            bot.send_message(mes.chat.id, f"{ADMIN_BUTTONS[4]}:\n{player_name}")
 
 
 bot.polling(none_stop=True, interval=0)
 
 
-print("Administrators:", ADMINS)
-print("Total players:", players)
-print("Approved Players:", players_approved)
-print("Pending Players", players_pending)
-print("Denied Players:", players_denied)
-print("Payed Players", players_payed)
+print("Administrators:", ADMINS)  # type: ignore
+print("Total players:", players)  # type: ignore
+print("Approved Players:", players_approved)  # type: ignore
+print("Pending Players", players_pending)  # type: ignore
+print("Denied Players:", players_denied)  # type: ignore
+print(f"Total amount from players must be: {players_payed} rub")  # type: ignore
+logger.debug("Debug message")
+logger.info("Info message")
+logger.warning("Warning message")
+logger.error("Error message")
+logger.critical("Critical message")
