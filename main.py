@@ -26,7 +26,6 @@ def admin_menu(mes):
         mes.chat.id,
         f"Привет, {mes.chat.first_name}! Я твой персональный помощник!",
     )
-    bot.send_message(mes.chat.id, f"{DISCLAIMER[0]}")
     if mes.chat.id not in players.keys():
         players[mes.chat.id] = mes.chat.first_name
     if mes.chat.id in ADMINS.keys():
@@ -39,12 +38,8 @@ def admin_menu(mes):
         btn2 = types.KeyboardButton(MAIN_BUTTONS[1])
         btn3 = types.KeyboardButton(MAIN_BUTTONS[2])
         btn4 = types.KeyboardButton(MAIN_BUTTONS[3])
-        btn5 = types.KeyboardButton(ADMIN_BUTTONS[0])
-        btn6 = types.KeyboardButton(ADMIN_BUTTONS[1])
-        btn7 = types.KeyboardButton(ADMIN_BUTTONS[2])
-        btn8 = types.KeyboardButton(ADMIN_BUTTONS[3])
-        btn9 = types.KeyboardButton(ADMIN_BUTTONS[4])
-        keyboard.add(btn1, btn2, btn3, btn4, btn5, btn6, btn7, btn8, btn9)
+        btn5 = types.KeyboardButton(ADMIN_BUTTONS[5])
+        keyboard.add(btn1, btn2, btn3, btn4, btn5)
         bot.send_message(mes.chat.id, f"{ADMIN_MENU_MESSAGE[0]}")
         bot.send_message(
             mes.chat.id,
@@ -52,8 +47,7 @@ def admin_menu(mes):
             reply_markup=keyboard,
         )
     else:
-        bot.send_message(mes.chat.id, f"{DISCLAIMER}")
-        keyboard = types.ReplyKeyboardMarkup(row_width=4, resize_keyboard=True)
+        keyboard = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
         btn1 = types.KeyboardButton(
             MAIN_BUTTONS[0],
         )
@@ -73,8 +67,11 @@ def admin_menu(mes):
 @bot.message_handler(content_types=["text"])
 def text(mes):
     if mes.text == MAIN_BUTTONS[0]:
-        bot.send_message(mes.chat.id, f"{INFO[0]}: \n{game_schedule}")
-        bot.send_message(mes.chat.id, f"{INFO[1]}: \n{current_date}")
+        bot.send_message(
+            mes.chat.id,
+            f"{INFO[0]}: \n{game_schedule}",
+        )
+        bot.send_message(mes.chat.id, f"{INFO[1]}: \n{current_weekday}, {current_date}")
 
     elif mes.text == MAIN_BUTTONS[1]:
         keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
@@ -102,16 +99,15 @@ def text(mes):
     elif mes.text == MAIN_BUTTONS[3]:
         bot.send_message(mes.chat.id, f"{INFO[2]}")
 
-    elif mes.text == ADMIN_BUTTONS[0]:
-        bot.send_message(mes.chat.id, f"{ADMIN_BUTTONS[0]}: \n{players}")
-    elif mes.text == ADMIN_BUTTONS[1]:
-        bot.send_message(mes.chat.id, f"{ADMIN_BUTTONS[1]}: \n{players_approved}")
-    elif mes.text == ADMIN_BUTTONS[2]:
-        bot.send_message(mes.chat.id, f"{ADMIN_BUTTONS[2]}: \n{players_pending}")
-    elif mes.text == ADMIN_BUTTONS[3]:
-        bot.send_message(mes.chat.id, f"{ADMIN_BUTTONS[3]}: \n{players_denied}")
-    elif mes.text == ADMIN_BUTTONS[4]:
-        bot.send_message(mes.chat.id, f"{ADMIN_BUTTONS[4]}: \n{players_payed} rub")
+    elif mes.text == ADMIN_BUTTONS[5]:
+        bot.send_message(
+            mes.chat.id,
+            f"{ADMIN_BUTTONS[0]}: \n{players}"
+            f"\n{ADMIN_BUTTONS[1]}: \n{players_approved}"
+            f"\n{ADMIN_BUTTONS[2]}: \n{players_pending}"
+            f"\n{ADMIN_BUTTONS[3]}: \n{players_denied}"
+            f"\n{ADMIN_BUTTONS[4]}: \n{players_payed} rub",
+        )
 
     if mes.text == CONFIRM_BUTTONS[0]:
         confirm(mes)
@@ -151,6 +147,7 @@ def confirm(mes):
                 players_denied.pop(mes.chat.id)
                 bot.send_message(mes.chat.id, f"{mes.chat.first_name}{CHECK[0]}")
                 players_payed[0] += price
+    admin_menu(mes)
 
 
 @bot.message_handler(func=lambda btn: True)
@@ -180,6 +177,7 @@ def pending(mes):
             bot.send_message(mes.chat.id, f"{mes.chat.first_name}{CHECK[1]}")
         else:
             bot.send_message(mes.chat.id, f"{mes.chat.first_name}{CHECK[1]}")
+    admin_menu(mes)
 
 
 @bot.message_handler(func=lambda btn: True)
@@ -212,6 +210,7 @@ def deny(mes):
             players_payed[0] -= price
         else:
             bot.send_message(mes.chat.id, f"{mes.chat.first_name}{CHECK[2]}")
+    admin_menu(mes)
 
 
 bot.polling(none_stop=True, interval=0)
